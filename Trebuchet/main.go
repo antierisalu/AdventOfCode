@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 )
 
@@ -112,6 +113,8 @@ func replaceSubstrings(s string) (int, error) {
 }
 
 func main() {
+	staringTime := time.Now()
+
 	file, err := os.Open("data.txt")
 	if err != nil {
 		log.Fatalf("Error opening the file: %v", file)
@@ -123,20 +126,20 @@ func main() {
 	for scanner.Scan() {
 		line := scanner.Text()
 
-	
-	// Example usage
-	firstResult, lastResult, err := parseNumbersFromString(line)
-	a, b := firstResult, lastResult
-	a = a*10+b
-	fmt.Println(a)
-	totalSum += a
+		// Example usage
+		firstResult, lastResult, err := parseNumbersFromString(line)
+		a, b := firstResult, lastResult
+		a = a*10 + b
+		fmt.Println(a)
+		totalSum += a
 
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		fmt.Println("First Parsed number:", firstResult)
-		fmt.Println("Last Parsed number:", lastResult)
+		if err != nil {
+			fmt.Println("Error:", err)
+		} else {
+			fmt.Println("First Parsed number:", firstResult)
+			fmt.Println("Last Parsed number:", lastResult)
+		}
+		log.Println(totalSum)
 	}
-	log.Println(totalSum)
-}
+	log.Println(time.Since(staringTime))
 }
