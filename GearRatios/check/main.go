@@ -39,9 +39,9 @@ func getNumberLocations(data string) []NumberInfo {
 
 	for _, match := range matches {
 		numbers = append(numbers, NumberInfo{
-			Number: data[match[0]:match[1]],
+			Number:     data[match[0]:match[1]],
 			StartIndex: match[0],
-			EndIndex: match[1]-1,
+			EndIndex:   match[1] - 1,
 		})
 	}
 
@@ -57,22 +57,33 @@ func processFile() {
 
 	scanner := bufio.NewScanner(dataFile)
 	lineNumber := 1
+	var prevSymbols, currSymbols, nextSymbols []SymbolInfo
+	var currData string
+
 	for scanner.Scan() {
-		data := scanner.Text()
+		prevSymbols = currSymbols
+		currSymbols = nextSymbols
+		currData = scanner.Text()
+		nextSymbols = getSymbolLocations(currData)
+		numbers := getNumberLocations(currData)
+
+
+
 		fmt.Printf("\nLine %d:\n", lineNumber)
-		symbols := getSymbolLocations(data)
-		numbers := getNumberLocations(data)
-
-		for _, symbolInfo := range symbols {
-			fmt.Printf("Symbol: %c, Location: %d\n", symbolInfo.Symbol, symbolInfo.Index)
-		}
-
-		// fmt.Println("Numbers:")
 		for _, numberInfo := range numbers {
 			fmt.Printf("Number: %s, Location: %d-%d\n", numberInfo.Number, numberInfo.StartIndex, numberInfo.EndIndex)
 		}
+		for _, symbolInfo := range prevSymbols {
+			fmt.Printf("Previous line Symbol: %c, Location: %d\n", symbolInfo.Symbol, symbolInfo.Index)
+		}
+		for _, symbolInfo := range currSymbols {
+			fmt.Printf("Current line Symbol: %c, Location: %d\n", symbolInfo.Symbol, symbolInfo.Index)
+		}
+		for _, symbolInfo := range nextSymbols {
+			fmt.Printf("Next line Symbol: %c, Location: %d\n", symbolInfo.Symbol, symbolInfo.Index)
+		}
 
-		 lineNumber++
+		lineNumber++
 	}
 }
 
