@@ -18,15 +18,21 @@ type NumberInfo struct {
 	Number     string
 	StartIndex int
 	EndIndex   int
+	Locations    []int
+}
+
+type LineInfo struct {
+	Symbols []SymbolInfo
+	Numbers []NumberInfo
+	LineLen int
 }
 
 var (
-	IsTop            bool = false
-	IsRight          bool = false
-	IsLeft           bool = false
-	IsBottom         bool = false
-	LineCount        int
-	CurrentLineCount int
+	TextFile                         string = "test.txt"
+	IsTop, IsLeft, IsRight, IsBottom bool
+	LineCount                        int
+	CurrentLineCount                 int
+	SumOfNumbers                     int
 )
 
 func getSymbolLocations(data string) []SymbolInfo {
@@ -47,18 +53,22 @@ func getNumberLocations(data string) []NumberInfo {
 	var numbers []NumberInfo
 
 	for _, match := range matches {
+		indexes := make([]int, match[1]-match[0])
+		for i := range indexes {
+			indexes[i] = match[0] + i
+		}
 		numbers = append(numbers, NumberInfo{
 			Number:     data[match[0]:match[1]],
 			StartIndex: match[0],
 			EndIndex:   match[1] - 1,
+			Locations:    indexes,
 		})
 	}
 	return numbers
 }
 
 func countLines() {
-	// Assuming "dataFile.txt" is the name of your file
-	file, err := os.Open("test.txt")
+	file, err := os.Open(TextFile)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
 		return
@@ -82,7 +92,7 @@ func countLines() {
 }
 
 func processFile() {
-	dataFile, err := os.Open("test.txt")
+	dataFile, err := os.Open(TextFile)
 	if err != nil {
 		log.Fatalf("Error opening file: %v", err)
 	}
@@ -90,44 +100,63 @@ func processFile() {
 
 	scanner := bufio.NewScanner(dataFile)
 
-	var nextLineSymbols, previousLineSymbols, currentLineSymbols []SymbolInfo
-	var currentData string
+	var lineInfos []LineInfo
 
+	// First pass: read all lines and store symbol and number information
 	for scanner.Scan() {
-		nextLineSymbols = previousLineSymbols
-		previousLineSymbols = currentLineSymbols
-		currentData = scanner.Text()
-		currentLineSymbols = getSymbolLocations(currentData)
-		numbers := getNumberLocations(currentData)
-		lineLength := len(currentData)-1
+		line := scanner.Text()
+		symbols := getSymbolLocations(line)
+		numbers := getNumberLocations(line)
+		lineInfos = append(lineInfos, LineInfo{Symbols: symbols, Numbers: numbers, LineLen: len(line)})
+		fmt.Println(line)
+	}
+	
+	// Second pass: process each line with access to next and previous line's symbols
+	for i, lineInfo := range lineInfos {
 
-		for _, numberInfo := range numbers {
+		// Access previous, current and next line's symbols
+		var previousLineSymbols, nextLineSymbols []SymbolInfo
+		if i > 0 {
+			previousLineSymbols = lineInfos[i-1].Symbols
+		}
+		currentLineSymbols := lineInfo.Symbols
+		if i < len(lineInfos)-1 {
+			nextLineSymbols = lineInfos[i+1].Symbols
+		}
+
+		// Process each number in the current line
+		for _, numberInfo := range lineInfo.Numbers {
 			IsLeft = numberInfo.StartIndex == 0
-			IsRight = numberInfo.EndIndex == lineLength
-			IsTop = CurrentLineCount == 1
-			IsBottom = CurrentLineCount == LineCount
+			IsRight = numberInfo.EndIndex == lineInfo.LineLen-1
+			IsTop = i == 0
+			IsBottom = i == len(lineInfos)-1
 
-			fmt.Printf("\nLine %d - Number: %s, Location: %d-%d\n", CurrentLineCount, numberInfo.Number, numberInfo.StartIndex, numberInfo.EndIndex)
-			fmt.Printf("IsTop: %t, IsRight: %t, IsLeft: %t, IsBottom: %t\n", IsTop, IsRight, IsLeft, IsBottom)
-		}
-		for _, symbolInfo := range nextLineSymbols {
-			fmt.Printf("Next line Symbol: %c, Location: %d\n", symbolInfo.Symbol, symbolInfo.Index)
-		}
-		for _, symbolInfo := range previousLineSymbols {
-			fmt.Printf("Previous line Symbol: %c, Location: %d\n", symbolInfo.Symbol, symbolInfo.Index)
-		}
-		if CurrentLineCount != 0 {
+			// Check for adjacent symbols
 			for _, symbolInfo := range currentLineSymbols {
-				fmt.Printf("Current Symbol: %c, Location: %d\n", symbolInfo.Symbol, symbolInfo.Index)
+				if symbolInfo.Index == numberInfo.StartIndex-1 || symbolInfo.Index == numberInfo.EndIndex+1 {
+					fmt.Printf("Number %s has an adjacent symbol %c\n", numberInfo.Number, symbolInfo.Symbol)
+				}
+			}
+			if !IsTop {
+				for _, symbolInfo := range previousLineSymbols {
+					if symbolInfo.Index >= numberInfo.StartIndex && symbolInfo.Index <= numberInfo.EndIndex {
+						fmt.Printf("Number %s has an adjacent symbol %c on the previous line\n", numberInfo.Number, symbolInfo.Symbol)
+					}
+				}
+			}
+			if !IsBottom {
+				for _, symbolInfo := range nextLineSymbols {
+					if symbolInfo.Index >= numberInfo.StartIndex && symbolInfo.Index <= numberInfo.EndIndex {
+						fmt.Printf("Number %s has an adjacent symbol %c on the next line\n", numberInfo.Number, symbolInfo.Symbol)
+					}
+				}
 			}
 		}
-		CurrentLineCount++
 	}
 }
+
 
 func main() {
 	countLines()
 	processFile()
-
-
 }
