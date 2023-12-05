@@ -7,7 +7,6 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"unicode"
 )
 
 type SymbolInfo struct {
@@ -33,18 +32,16 @@ var (
 	IsTop, IsLeft, IsRight, IsBottom bool
 	LineCount                        int
 	CurrentLineCount                 int
-	SumOfNumbers                     int
 )
 
 func getSymbolLocations(data string) []SymbolInfo {
 	var symbols []SymbolInfo
 
 	for i, char := range data {
-		if !unicode.IsDigit(char) && !unicode.IsLetter(char) && !unicode.IsSpace(char) && char != '.' {
+		if char == '*' {
 			symbols = append(symbols, SymbolInfo{Symbol: char, Index: i})
 		}
 	}
-
 	return symbols
 }
 
@@ -77,7 +74,6 @@ func countLines() {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-
 	CurrentLineCount = 1
 
 	for scanner.Scan() {
@@ -110,70 +106,71 @@ func processFile() {
 		symbols := getSymbolLocations(line)
 		numbers := getNumberLocations(line)
 		lineInfos = append(lineInfos, LineInfo{Symbols: symbols, Numbers: numbers, LineLen: len(line)})
-		fmt.Println(line)
 	}
 
 	// Second pass: process each line with access to next and previous line's symbols
 	for i, lineInfo := range lineInfos {
 
-		// Access previous, current and next line's symbols
-		var previousLineSymbols, nextLineSymbols []SymbolInfo
+		// Access previous, current and next line's numbers
+		var previousLineNumbers, nextLineNumbers []NumberInfo
 		if i > 0 {
-			previousLineSymbols = lineInfos[i-1].Symbols
+			previousLineNumbers = lineInfos[i-1].Numbers
 		}
-		currentLineSymbols := lineInfo.Symbols
+		currentLineNumbers := lineInfo.Numbers
 		if i < len(lineInfos)-1 {
-			nextLineSymbols = lineInfos[i+1].Symbols
+			nextLineNumbers = lineInfos[i+1].Numbers
 		}
 
-		// Process each number in the current line
-		for _, numberInfo := range lineInfo.Numbers {
-			IsLeft = numberInfo.StartIndex == 0
-			IsRight = numberInfo.EndIndex == lineInfo.LineLen-1
+		// Process each symbol in the current line
+		for _, symbolInfo := range lineInfo.Symbols {
+			IsLeft = symbolInfo.Index == 0
+			IsRight = symbolInfo.Index == lineInfo.LineLen-1
 			IsTop = i == 0
 			IsBottom = i == len(lineInfos)-1
 
-			// Check for adjacent symbols
-			for _, symbolInfo := range currentLineSymbols {
-				if symbolInfo.Index == numberInfo.StartIndex-1 || symbolInfo.Index == numberInfo.EndIndex+1 {
-					fmt.Printf("Number %s has an adjacent symbol %c\n", numberInfo.Number, symbolInfo.Symbol)
-					num, err := strconv.Atoi(numberInfo.Number)
-					if err != nil {
-						log.Fatalf("Error converting number to integer: %v", err)
-					}
-					totalSum += num
+			// Check for adjacent numbers
+			adjacentNumbers := make([]string, 0)
+			for _, numberInfo := range currentLineNumbers {
+				if numberInfo.StartIndex == symbolInfo.Index+1 || numberInfo.EndIndex == symbolInfo.Index-1 {
+					adjacentNumbers = append(adjacentNumbers, numberInfo.Number)
 				}
 			}
 			if !IsTop {
-				for _, symbolInfo := range previousLineSymbols {
-					if symbolInfo.Index >= numberInfo.StartIndex-1 && symbolInfo.Index <= numberInfo.EndIndex+1 {
-						fmt.Printf("Number %s has an adjacent symbol %c on the previous line\n", numberInfo.Number, symbolInfo.Symbol)
-						num, err := strconv.Atoi(numberInfo.Number)
-						if err != nil {
-							log.Fatalf("Error converting number to integer: %v", err)
-						}
-						totalSum += num
+				for _, numberInfo := range previousLineNumbers {
+					if numberInfo.StartIndex <= symbolInfo.Index+1 && numberInfo.EndIndex >= symbolInfo.Index-1 {
+						adjacentNumbers = append(adjacentNumbers, numberInfo.Number)
 					}
 				}
 			}
 			if !IsBottom {
-				for _, symbolInfo := range nextLineSymbols {
-					if symbolInfo.Index >= numberInfo.StartIndex-1 && symbolInfo.Index <= numberInfo.EndIndex+1 {
-						fmt.Printf("Number %s has an adjacent symbol %c on the next line\n", numberInfo.Number, symbolInfo.Symbol)
-						num, err := strconv.Atoi(numberInfo.Number)
-						if err != nil {
-							log.Fatalf("Error converting number to integer: %v", err)
-						}
-						totalSum += num
+				for _, numberInfo := range nextLineNumbers {
+					if numberInfo.StartIndex <= symbolInfo.Index+1 && numberInfo.EndIndex >= symbolInfo.Index-1 {
+						adjacentNumbers = append(adjacentNumbers, numberInfo.Number)
 					}
 				}
 			}
+
+			// If symbol has two or more adjacent numbers, print a message
+			if len(adjacentNumbers) >= 2 {
+				fmt.Printf("Symbol %c has two or more adjacent numbers: %v\n", symbolInfo.Symbol, adjacentNumbers)
+				product := 1
+				for _, numStr := range adjacentNumbers {
+					num, err := strconv.Atoi(numStr)
+					if err != nil {
+						log.Fatalf("Error converting string to integer: %v", err)
+					}
+					product *= num
+				}
+				totalSum += product
+			}
+			fmt.Printf("The total sum of all numbers is %d\n", totalSum)
 		}
+		
 	}
-	fmt.Printf("The total sum of all numbers is %d\n", totalSum)
 }
 
 func main() {
-	countLines()
+	
 	processFile()
+	countLines()
 }
