@@ -99,12 +99,10 @@ func processFile() {
 		currData = scanner.Text()
 		currentLineSymbols = getSymbolLocations(currData)
 		numbers := getNumberLocations(currData)
-		lineLength := len(currData)
+		lineLength := len(currData)-1
 
 		IsTop, IsRight, IsLeft, IsBottom := edges(numbers, lineLength)
 
-
-		fmt.Printf("\nLine %d:\n", CurrentLineCount)
 		for _, numberInfo := range numbers {
             fmt.Printf("\nLine %d - Number: %s, Location: %d-%d\n", CurrentLineCount, numberInfo.Number, numberInfo.StartIndex, numberInfo.EndIndex)
             fmt.Printf("IsTop: %t, IsRight: %t, IsLeft: %t, IsBottom: %t\n", IsTop, IsRight, IsLeft, IsBottom)
@@ -141,11 +139,11 @@ func edges(numbers []NumberInfo, lineLength int) (bool, bool, bool, bool) {
 
 	for _, num := range numbers {
 		if num.StartIndex == 0 {
-			IsRight = true
+			IsLeft = true
 		}
 
-		if num.EndIndex == lineLength-1 {
-			IsLeft = true
+		if num.EndIndex == lineLength {
+			IsRight = true
 		}
 	}
 	if CurrentLineCount == LineCount {
