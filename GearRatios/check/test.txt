@@ -1,10 +1,17 @@
-467..114..
+467..114..*
 ...*......
 ..35..633.
 ......#...
-617*......
-.....+.58.
+617*....2.
+.....+..58
 ..592.....
 ......755.
 ...$.*....
 .664.598..
+
+current line symbols indexes
+current line number indexes
+
+isTop, isRight, isLeft, isBottom := 0, 0, 0, 0
+
+for horizontalMatches check if symbols are -1 ja +1 of numbers
