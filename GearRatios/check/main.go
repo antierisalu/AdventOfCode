@@ -139,14 +139,14 @@ func processFile() {
 			}
 			if !IsTop {
 				for _, symbolInfo := range previousLineSymbols {
-					if symbolInfo.Index >= numberInfo.StartIndex && symbolInfo.Index <= numberInfo.EndIndex {
+					if symbolInfo.Index >= numberInfo.StartIndex-1 && symbolInfo.Index <= numberInfo.EndIndex+1 {
 						fmt.Printf("Number %s has an adjacent symbol %c on the previous line\n", numberInfo.Number, symbolInfo.Symbol)
 					}
 				}
 			}
 			if !IsBottom {
 				for _, symbolInfo := range nextLineSymbols {
-					if symbolInfo.Index >= numberInfo.StartIndex && symbolInfo.Index <= numberInfo.EndIndex {
+					if symbolInfo.Index >= numberInfo.StartIndex-1 && symbolInfo.Index <= numberInfo.EndIndex+1 {
 						fmt.Printf("Number %s has an adjacent symbol %c on the next line\n", numberInfo.Number, symbolInfo.Symbol)
 					}
 				}
