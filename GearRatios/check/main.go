@@ -91,22 +91,25 @@ func processFile() {
 	scanner := bufio.NewScanner(dataFile)
 
 	var nextLineSymbols, previousLineSymbols, currentLineSymbols []SymbolInfo
-	var currData string
+	var currentData string
 
 	for scanner.Scan() {
 		nextLineSymbols = previousLineSymbols
 		previousLineSymbols = currentLineSymbols
-		currData = scanner.Text()
-		currentLineSymbols = getSymbolLocations(currData)
-		numbers := getNumberLocations(currData)
-		lineLength := len(currData)-1
-
-		IsTop, IsRight, IsLeft, IsBottom := edges(numbers, lineLength)
+		currentData = scanner.Text()
+		currentLineSymbols = getSymbolLocations(currentData)
+		numbers := getNumberLocations(currentData)
+		lineLength := len(currentData)-1
 
 		for _, numberInfo := range numbers {
-            fmt.Printf("\nLine %d - Number: %s, Location: %d-%d\n", CurrentLineCount, numberInfo.Number, numberInfo.StartIndex, numberInfo.EndIndex)
-            fmt.Printf("IsTop: %t, IsRight: %t, IsLeft: %t, IsBottom: %t\n", IsTop, IsRight, IsLeft, IsBottom)
-        }
+			IsLeft = numberInfo.StartIndex == 0
+			IsRight = numberInfo.EndIndex == lineLength
+			IsTop = CurrentLineCount == 1
+			IsBottom = CurrentLineCount == LineCount
+
+			fmt.Printf("\nLine %d - Number: %s, Location: %d-%d\n", CurrentLineCount, numberInfo.Number, numberInfo.StartIndex, numberInfo.EndIndex)
+			fmt.Printf("IsTop: %t, IsRight: %t, IsLeft: %t, IsBottom: %t\n", IsTop, IsRight, IsLeft, IsBottom)
+		}
 		for _, symbolInfo := range nextLineSymbols {
 			fmt.Printf("Next line Symbol: %c, Location: %d\n", symbolInfo.Symbol, symbolInfo.Index)
 		}
@@ -118,7 +121,6 @@ func processFile() {
 				fmt.Printf("Current Symbol: %c, Location: %d\n", symbolInfo.Symbol, symbolInfo.Index)
 			}
 		}
-
 		CurrentLineCount++
 	}
 }
@@ -127,28 +129,5 @@ func main() {
 	countLines()
 	processFile()
 
-	// edges()
-}
 
-func edges(numbers []NumberInfo, lineLength int) (bool, bool, bool, bool) {
-	var IsTop, IsRight, IsLeft, IsBottom bool
-
-	if CurrentLineCount == 1 {
-		IsTop = true
-	}
-
-	for _, num := range numbers {
-		if num.StartIndex == 0 {
-			IsLeft = true
-		}
-
-		if num.EndIndex == lineLength {
-			IsRight = true
-		}
-	}
-	if CurrentLineCount == LineCount {
-		IsBottom = true
-	}
-
-	return IsTop, IsRight, IsLeft, IsBottom
 }
